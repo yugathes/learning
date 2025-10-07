@@ -1,0 +1,70 @@
+services:
+  n8n-main:
+    image: n8nio/n8n
+    restart: unless-stopped
+    container_name: n8nv2-main
+    command: start
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=bD6scemb1YmxHpkbCsVNHlxGcXCemu92
+      - QUEUE_BULL_REDIS_HOST=redis
+      - EXECUTIONS_MODE=queue
+      - N8N_HOST=${SUBDOMAIN}.${DOMAIN_NAME}
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom
+    networks:
+      - default
+    ports:
+      - "127.0.0.1:5666:5678"
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+      - ./n8n-custom-nodes:/home/node/.n8n/custom
+
+  n8n-worker:
+    image: n8nio/n8n
+    restart: unless-stopped
+    container_name: n8nv2-worker
+    command: worker
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=bD6scemb1YmxHpkbCsVNHlxGcXCemu92
+      - QUEUE_BULL_REDIS_HOST=redis
+      - EXECUTIONS_MODE=queue
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    depends_on:
+      - n8n-main
+
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    container_name: n8nv2-postgres
+    environment:
+      - POSTGRES_DB=n8n
+      - POSTGRES_USER=n8n
+      - POSTGRES_PASSWORD=bD6scemb1YmxHpkbCsVNHlxGcXCemu92
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    container_name: n8nv2-redis
+    volumes:
+      - ./redis_data:/data
+
+volumes:
+  n8n_data:
+  postgres_data:
+  redis_data:
+
